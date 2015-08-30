@@ -25,7 +25,7 @@ app.use(morgan('dev'));
 
 
 //CONNECT TO DATABASE
-mongoose.connect('mongodb://<Salamander1012>:<password>@apollo.modulusmongo.net:27017/iZosu2bi');
+mongoose.connect('mongodb://salman:salman@ds035613.mongolab.com:35613/meandb');
 
 //ROUTES FOR API
 
@@ -51,24 +51,79 @@ apiRouter.get('/', function(req, res) {
 
 //more routes for api
 //routes that end in /user
-apiRouter.route('/user')
+apiRouter.route('/users')
+
+	// create a user (accessed at POST http://localhost:8080/users)
 	.post(function(req, res) {
-		var user = new User();
-		user.name = req.body.name;
-		user.username = req.body.username;
-		user.password = req.body.password;
-		user.save(function (err) {
+		
+		var user = new User();		// create a new instance of the User model
+		user.name = req.body.name;  // set the users name (comes from the request)
+		user.username = req.body.username;  // set the users username (comes from the request)
+		user.password = req.body.password;  // set the users password (comes from the request)
+
+		user.save(function(err) {
 			if (err) {
-				if (err.code == 11000)
-					return res.json({ success: false, message: 'a user with that username already exists'});
-				else
+				// duplicate entry
+				if (err.code == 11000) 
+					return res.json({ success: false, message: 'A user with that username already exists. '});
+				else 
 					return res.send(err);
 			}
-				res.json({ message: 'user created!'});
+
+			// return a message
+			res.json({ message: 'User created!' });
+		});
+
+	})
+
+	// get all the users (accessed at GET http://localhost:8080/api/users)
+	.get(function(req, res) {
+		User.find(function(err, users) {
+			if (err) return res.send(err);
+
+			// return the users
+			res.json(users);
 		});
 	});
 
+//routes that end in /users/:user_id
 
+apiRouter.route('/users/:user_id')
+
+// get the user by id
+	.get(function(req, res){
+		User.findById(req.params.user_id, function(err, user) {
+			if (err) res.send(err);
+			res.json(user);
+		})
+	})
+//update the user by id
+
+	.put(function(req, res) {
+		User.findById(req.params.user_id, function(err, user) {
+			if (err) res.send(err);
+			if (req.body.name) user.name = req.body.name;
+			if (req.body.username) user.username = req.body.username;
+			if (req.body.password) user.password = req.body.password;
+			//save user
+			user.save(function(err) {
+				if (err) res.send(err);
+			})
+
+			res.json({message: 'User updated!'});
+		})
+	})
+
+//delete user by id
+
+	.delete(function(req, res) {
+		User.remove({
+			_id: req.params.user_id
+		}, function(err, user) {
+			if (err) return res.send(err);
+			res.json({message: 'Succesfully deleted!'});
+		});
+	}); 
 
 
 //REGISTER ROUTES
